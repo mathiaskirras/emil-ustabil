@@ -140,11 +140,11 @@ function cancellationNoticeColor(value: number) {
 }
 
 function excusesPerIncidentColor(value: number) {
-  if (value <= 1) {
+  if (value <= 1.5) {
     return 'text-green-300'
   }
 
-  if (value <= 2) {
+  if (value <= 2.5) {
     return 'text-yellow-300'
   }
 
@@ -459,7 +459,7 @@ function formatMinutes(minutes: number) {
         </p>
 
         <h2 class="mt-3 text-2xl font-black tracking-tight">
-          ETA: Sandsynligvis forsinket
+          Sandsynligvis forsinket
         </h2>
 
         <p class="mt-2 max-w-sm text-sm text-slate-400">
