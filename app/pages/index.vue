@@ -53,23 +53,58 @@ const stats = computed(() => {
     ? Math.max(...late.map((x: any) => Number(x.delayMinutes || 0)))
     : 0
 
-  const avgSeverity = list.length
-    ? Math.round(
-      list.reduce((sum: number, x: any) => {
-        return sum + Number(x.severity || 0)
-      }, 0) / list.length * 10
-    ) / 10
+  const cancellationRate = list.length
+    ? Math.round((cancelled.length / list.length) * 100)
     : 0
 
-  const reliabilityScore = Math.max(
-    0,
-    Math.round(
-      100 -
-      avgDelay -
-      cancelled.length * 8 -
-      avgSeverity * 4
-    )
-  )
+  const totalCancellationNotice = cancelled.reduce((sum: number, x: any) => {
+    return sum + Number(x.cancelledNoticeMinutes || 0)
+  }, 0)
+
+  const avgCancellationNotice = cancelled.length
+    ? Math.round(totalCancellationNotice / cancelled.length)
+    : 0
+
+  const shortestCancellationNotice = cancelled.length
+    ? Math.min(...cancelled.map((x: any) => Number(x.cancelledNoticeMinutes || 0)))
+    : 0
+
+  const cancellationsAfterStart = cancelled.filter((x: any) => {
+    return Number(x.cancelledNoticeMinutes || 0) < 0
+  }).length
+
+  const totalExcuses = list.reduce((sum: number, x: any) => {
+    return sum + (x.excuses?.length || 0)
+  }, 0)
+
+  const excusesPerIncident = list.length
+    ? Math.round((totalExcuses / list.length) * 10) / 10
+    : 0
+
+  const latestIncident = list.length
+    ? [...list].sort((a: any, b: any) => {
+        return new Date(b.date).getTime() - new Date(a.date).getTime()
+      })[0]
+    : null
+
+  const daysSinceLastIncident = latestIncident
+    ? Math.floor(
+        (Date.now() - new Date(latestIncident.date).getTime()) /
+        (1000 * 60 * 60 * 24)
+      )
+    : 0
+
+  const worstSeverityIncident = list.length
+    ? [...list].sort((a: any, b: any) => {
+        const severityDiff = Number(b.severity || 0) - Number(a.severity || 0)
+
+        if (severityDiff !== 0) {
+          return severityDiff
+        }
+
+        return Number(b.delayMinutes || 0) - Number(a.delayMinutes || 0)
+      })[0]
+    : null
 
   return {
     total: list.length,
@@ -78,8 +113,13 @@ const stats = computed(() => {
     avgDelay,
     totalDelay,
     worstDelay,
-    avgSeverity,
-    reliabilityScore
+    cancellationRate,
+    avgCancellationNotice,
+    shortestCancellationNotice,
+    cancellationsAfterStart,
+    excusesPerIncident,
+    daysSinceLastIncident,
+    worstSeverityIncident
   }
 })
 
@@ -199,6 +239,61 @@ const topCancelledActivityTypes = computed(() => {
     }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 3)
+})
+
+const riskiestActivityType = computed(() => {
+  const groups: Record<string, {
+    totalDelay: number
+    lateCount: number
+    cancelledCount: number
+    totalCount: number
+  }> = {}
+
+  for (const incident of incidents.value || []) {
+    const type = incident.activityType
+
+    if (!groups[type]) {
+      groups[type] = {
+        totalDelay: 0,
+        lateCount: 0,
+        cancelledCount: 0,
+        totalCount: 0
+      }
+    }
+
+    groups[type].totalCount += 1
+
+    if (incident.status === 'late') {
+      groups[type].lateCount += 1
+      groups[type].totalDelay += Number(incident.delayMinutes || 0)
+    }
+
+    if (incident.status === 'cancelled') {
+      groups[type].cancelledCount += 1
+    }
+  }
+
+  const ranked = Object.entries(groups)
+    .map(([value, group]) => {
+      const avgDelay = group.lateCount
+        ? group.totalDelay / group.lateCount
+        : 0
+
+      const cancellationRate = group.totalCount
+        ? group.cancelledCount / group.totalCount
+        : 0
+
+      return {
+        value,
+        label: activityTypeLabels.value[value] || value,
+        score: Math.round(avgDelay + cancellationRate * 60),
+        avgDelay: Math.round(avgDelay),
+        cancelledCount: group.cancelledCount
+      }
+    })
+    .sort((a, b) => b.score - a.score)
+
+  return ranked[0] || null
 })
 
 function circleStyle(value: number, max: number, color = 'rgb(168 85 247)') {
@@ -392,6 +487,178 @@ function formatMinutes(minutes: number) {
 
           <p class="mt-3 text-center text-sm font-bold">
             Tabt tid
+          </p>
+        </article>
+
+        <article class="dashboard-card">
+          <div
+            class="circle"
+            :style="circleStyle(stats.cancellationRate, 100, 'rgb(239 68 68)')"
+          >
+            <div class="circle-inner">
+              <p class="text-2xl font-black">
+                {{ stats.cancellationRate }}%
+              </p>
+            </div>
+          </div>
+
+          <p class="mt-3 text-center text-sm font-bold">
+            Aflysningsrate
+          </p>
+        </article>
+
+        <article class="dashboard-card">
+          <div
+            class="circle"
+            :style="circleStyle(stats.cancellationsAfterStart, Math.max(stats.cancelled, 1), 'rgb(249 115 22)')"
+          >
+            <div class="circle-inner">
+              <p class="text-2xl font-black">
+                {{ stats.cancellationsAfterStart }}
+              </p>
+            </div>
+          </div>
+
+          <p class="mt-3 text-center text-sm font-bold">
+            Efter start
+          </p>
+        </article>
+      </section>
+
+      <section class="mt-4 grid gap-3 md:grid-cols-4">
+        <article class="mini-kpi">
+          <p class="mini-kpi-label">
+            Gns. aflysningsvarsel
+          </p>
+
+          <p class="mini-kpi-value text-orange-300">
+            {{ formatMinutes(stats.avgCancellationNotice) }}
+          </p>
+        </article>
+
+        <article class="mini-kpi">
+          <p class="mini-kpi-label">
+            Korteste varsel
+          </p>
+
+          <p class="mini-kpi-value text-red-300">
+            {{ formatMinutes(stats.shortestCancellationNotice) }}
+          </p>
+        </article>
+
+        <article class="mini-kpi">
+          <p class="mini-kpi-label">
+            Undskyldninger pr. hændelse
+          </p>
+
+          <p class="mini-kpi-value text-blue-300">
+            {{ stats.excusesPerIncident }}
+          </p>
+        </article>
+
+        <article class="mini-kpi">
+          <p class="mini-kpi-label">
+            Dage siden sidste hændelse
+          </p>
+
+          <p class="mini-kpi-value text-green-300">
+            {{ stats.daysSinceLastIncident }}
+          </p>
+        </article>
+      </section>
+
+      <section class="mt-4 grid gap-4 md:grid-cols-2">
+        <article class="panel">
+          <h2 class="text-lg font-black">
+            Mest alvorlige hændelse
+          </h2>
+
+          <p class="text-xs text-slate-500">
+            Højeste alvorlighed, forsinkelse som tie-breaker
+          </p>
+
+          <div
+            v-if="stats.worstSeverityIncident"
+            class="mt-5 rounded-2xl bg-slate-900/70 p-4"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="font-bold">
+                  {{ stats.worstSeverityIncident.title || 'Uden titel' }}
+                </p>
+
+                <p class="mt-1 text-xs font-bold uppercase tracking-wide text-blue-300">
+                  {{
+                    activityTypeLabels[stats.worstSeverityIncident.activityType] ||
+                    stats.worstSeverityIncident.activityType
+                  }}
+                </p>
+
+                <p class="mt-2 text-sm text-slate-400">
+                  {{
+                    stats.worstSeverityIncident.status === 'late'
+                      ? `${formatMinutes(stats.worstSeverityIncident.delayMinutes)} forsinket`
+                      : `aflyst ${formatMinutes(stats.worstSeverityIncident.cancelledNoticeMinutes)} før`
+                  }}
+                </p>
+              </div>
+
+              <span
+                class="rounded-full px-3 py-1 text-xs font-bold"
+                :class="severityClasses(stats.worstSeverityIncident.severity)"
+              >
+                {{ stats.worstSeverityIncident.severity }}
+              </span>
+            </div>
+          </div>
+
+          <p v-else class="mt-5 text-sm text-slate-500">
+            Ingen hændelser endnu.
+          </p>
+        </article>
+
+        <article class="panel">
+          <h2 class="text-lg font-black">
+            Mest risikable aktivitet
+          </h2>
+
+          <p class="text-xs text-slate-500">
+            Baseret på forsinkelse + aflysningsrate
+          </p>
+
+          <div
+            v-if="riskiestActivityType"
+            class="mt-5 rounded-2xl bg-slate-900/70 p-4"
+          >
+            <p class="text-2xl font-black">
+              {{ riskiestActivityType.label }}
+            </p>
+
+            <div class="mt-4 grid grid-cols-2 gap-3">
+              <div class="rounded-2xl bg-white/[0.04] p-3">
+                <p class="text-xs text-slate-500">
+                  Gns. forsinkelse
+                </p>
+
+                <p class="mt-1 text-lg font-black text-blue-300">
+                  {{ formatMinutes(riskiestActivityType.avgDelay) }}
+                </p>
+              </div>
+
+              <div class="rounded-2xl bg-white/[0.04] p-3">
+                <p class="text-xs text-slate-500">
+                  Aflysninger
+                </p>
+
+                <p class="mt-1 text-lg font-black text-red-300">
+                  {{ riskiestActivityType.cancelledCount }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <p v-else class="mt-5 text-sm text-slate-500">
+            Ingen aktivitetstyper endnu.
           </p>
         </article>
       </section>
@@ -668,6 +935,24 @@ function formatMinutes(minutes: number) {
   border: 1px solid rgb(255 255 255 / 0.1);
   background: rgb(255 255 255 / 0.04);
   padding: 1.25rem;
+}
+
+.mini-kpi {
+  border-radius: 1.5rem;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.04);
+  padding: 1rem;
+}
+
+.mini-kpi-label {
+  font-size: 0.75rem;
+  color: rgb(148 163 184);
+}
+
+.mini-kpi-value {
+  margin-top: 0.4rem;
+  font-size: 1.35rem;
+  font-weight: 900;
 }
 
 .circle {
