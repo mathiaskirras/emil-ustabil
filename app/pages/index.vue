@@ -628,7 +628,7 @@ function formatMinutes(minutes: number) {
             <div class="flex items-start justify-between gap-3">
               <div>
                 <p class="font-bold">
-                  {{ stats.worstSeverityIncident.title || 'Uden titel' }}
+                  {{ stats.worstSeverityIncident.title || activityTypeLabels[stats.worstSeverityIncident.activityType] || 'Uden titel' }}
                 </p>
 
                 <p class="mt-1 text-xs font-bold uppercase tracking-wide text-blue-300">
@@ -895,7 +895,7 @@ function formatMinutes(minutes: number) {
             <div class="flex items-start justify-between gap-3">
               <div>
                 <h3 class="font-bold">
-                  {{ incident.title || 'Uden titel' }}
+                  {{ incident.title || activityTypeLabels[incident.activityType] || 'Uden titel' }}
                 </h3>
 
                 <p class="mt-1 text-xs font-bold uppercase tracking-wide text-blue-300">
