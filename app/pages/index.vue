@@ -5,6 +5,14 @@ const { data: excuses } = await useFetch('/api/excuses')
 
 const isAdmin = ref(false)
 
+const excuseChartColors = [
+  'rgb(34 197 94)',
+  'rgb(59 130 246)',
+  'rgb(249 115 22)',
+  'rgb(236 72 153)',
+  'rgb(168 85 247)'
+]
+
 onMounted(() => {
   isAdmin.value = localStorage.getItem('adminUnlocked') === 'true'
 })
@@ -128,10 +136,11 @@ const excuseDistribution = computed(() => {
   }, 0)
 
   return Object.entries(counts)
-    .map(([value, count]) => ({
+    .map(([value, count], index) => ({
       value,
       label: excuseLabels.value[value] || value,
       count,
+      color: excuseChartColors[index % excuseChartColors.length],
       percentage: total
         ? Math.round((count / total) * 100)
         : 0
@@ -192,7 +201,7 @@ const topCancelledActivityTypes = computed(() => {
     .slice(0, 3)
 })
 
-function circleStyle(value: number, max: number) {
+function circleStyle(value: number, max: number, color = 'rgb(168 85 247)') {
   const percentage = Math.min(
     100,
     Math.max(
@@ -202,28 +211,44 @@ function circleStyle(value: number, max: number) {
   )
 
   return {
-    background: `conic-gradient(rgb(168 85 247) ${percentage}%, rgb(30 41 59) 0)`
+    background: `conic-gradient(${color} ${percentage}%, rgb(30 41 59) 0)`
+  }
+}
+
+function delayCircleStyle(value: number, max: number) {
+  const percentage = Math.min(
+    100,
+    Math.max(
+      0,
+      Math.round((value / Math.max(max, 1)) * 100)
+    )
+  )
+
+  let color = 'rgb(34 197 94)'
+
+  if (percentage >= 75) {
+    color = 'rgb(239 68 68)'
+  } else if (percentage >= 50) {
+    color = 'rgb(249 115 22)'
+  } else if (percentage >= 25) {
+    color = 'rgb(234 179 8)'
+  }
+
+  return {
+    background: `conic-gradient(${color} ${percentage}%, rgb(30 41 59) 0)`
   }
 }
 
 function donutStyle(items: any[]) {
-  const colors = [
-    'rgb(168 85 247)',
-    'rgb(139 92 246)',
-    'rgb(192 132 252)',
-    'rgb(216 180 254)',
-    'rgb(107 33 168)'
-  ]
-
   let current = 0
 
-  const segments = items.map((item, index) => {
+  const segments = items.map((item) => {
     const start = current
     const end = current + item.percentage
 
     current = end
 
-    return `${colors[index % colors.length]} ${start}% ${end}%`
+    return `${item.color} ${start}% ${end}%`
   })
 
   if (!segments.length) {
@@ -233,6 +258,28 @@ function donutStyle(items: any[]) {
   return {
     background: `conic-gradient(${segments.join(', ')})`
   }
+}
+
+function excuseColor(value: string) {
+  return excuseDistribution.value.find((item) => {
+    return item.value === value
+  })?.color || 'rgb(148 163 184)'
+}
+
+function rankingClasses(index: number) {
+  if (index === 0) {
+    return 'bg-yellow-400/20 text-yellow-300'
+  }
+
+  if (index === 1) {
+    return 'bg-slate-300/20 text-slate-200'
+  }
+
+  if (index === 2) {
+    return 'bg-orange-700/30 text-orange-300'
+  }
+
+  return 'bg-slate-700/40 text-slate-300'
 }
 
 function formatMinutes(minutes: number) {
@@ -259,7 +306,7 @@ function formatMinutes(minutes: number) {
           alt="Emil Mødeustabil"
           class="h-9 w-9 rounded-xl shadow-lg shadow-purple-500/20"
         >
-    
+
         <h1 class="text-xl font-black tracking-tight text-white">
           Emil Møde<span class="text-purple-400">u</span>stabil
         </h1>
@@ -317,7 +364,7 @@ function formatMinutes(minutes: number) {
         <article class="dashboard-card">
           <div
             class="circle"
-            :style="circleStyle(stats.avgDelay, 90)"
+            :style="delayCircleStyle(stats.avgDelay, stats.worstDelay)"
           >
             <div class="circle-inner">
               <p class="text-xl font-black">
@@ -334,7 +381,7 @@ function formatMinutes(minutes: number) {
         <article class="dashboard-card">
           <div
             class="circle"
-            :style="circleStyle(stats.totalDelay, 600)"
+            :style="circleStyle(stats.totalDelay, 600, 'rgb(59 130 246)')"
           >
             <div class="circle-inner">
               <p class="text-xl font-black">
@@ -369,22 +416,32 @@ function formatMinutes(minutes: number) {
 
           <div class="mt-5 space-y-3">
             <div
-              v-for="excuse in topExcuses"
+              v-for="(excuse, index) in topExcuses"
               :key="excuse.value"
               class="ranking-row"
             >
-              <div>
-                <p class="font-bold">
-                  {{ excuse.label }}
-                </p>
+              <div class="flex items-center gap-3">
+                <span
+                  class="h-3 w-3 rounded-full"
+                  :style="{ background: excuseColor(excuse.value) }"
+                />
 
-                <p class="text-xs text-slate-500">
-                  {{ excuse.count }} gange
-                </p>
+                <div>
+                  <p class="font-bold">
+                    {{ excuse.label }}
+                  </p>
+
+                  <p class="text-xs text-slate-500">
+                    {{ excuse.count }} gange
+                  </p>
+                </div>
               </div>
 
-              <span class="ranking-pill">
-                #{{ topExcuses.indexOf(excuse) + 1 }}
+              <span
+                class="ranking-pill"
+                :class="rankingClasses(index)"
+              >
+                #{{ index + 1 }}
               </span>
             </div>
 
@@ -415,8 +472,11 @@ function formatMinutes(minutes: number) {
 
               <div class="h-2 overflow-hidden rounded-full bg-slate-800">
                 <div
-                  class="h-full rounded-full bg-purple-500"
-                  :style="{ width: `${excuse.percentage}%` }"
+                  class="h-full rounded-full"
+                  :style="{
+                    width: `${excuse.percentage}%`,
+                    background: excuse.color
+                  }"
                 />
               </div>
             </div>
@@ -454,7 +514,7 @@ function formatMinutes(minutes: number) {
                 </p>
               </div>
 
-              <span class="ranking-pill">
+              <span class="ranking-pill blue-pill">
                 {{ formatMinutes(type.avgDelay) }}
               </span>
             </div>
@@ -490,7 +550,7 @@ function formatMinutes(minutes: number) {
                 </p>
               </div>
 
-              <span class="ranking-pill">
+              <span class="ranking-pill red-pill">
                 {{ type.count }} aflyst
               </span>
             </div>
@@ -510,7 +570,7 @@ function formatMinutes(minutes: number) {
             </h2>
           </div>
 
-          <span class="rounded-full bg-purple-500/20 px-3 py-1 text-xs font-bold text-purple-300">
+          <span class="rounded-full bg-blue-500/20 px-3 py-1 text-xs font-bold text-blue-300">
             {{ stats.total }} total
           </span>
         </div>
@@ -526,11 +586,11 @@ function formatMinutes(minutes: number) {
                 <h3 class="font-bold">
                   {{ incident.title || 'Uden titel' }}
                 </h3>
-          
-                <p class="mt-1 text-xs font-bold uppercase tracking-wide text-purple-300">
+
+                <p class="mt-1 text-xs font-bold uppercase tracking-wide text-blue-300">
                   {{ activityTypeLabels[incident.activityType] || incident.activityType }}
                 </p>
-          
+
                 <p class="mt-2 text-sm text-slate-400">
                   {{ new Date(incident.date).toLocaleDateString('da-DK') }}
                   ·
@@ -540,7 +600,7 @@ function formatMinutes(minutes: number) {
                       : `aflyst ${formatMinutes(incident.cancelledNoticeMinutes)} før`
                   }}
                 </p>
-          
+
                 <p
                   v-if="incident.reportedBy"
                   class="mt-2 text-xs text-slate-500"
@@ -551,7 +611,7 @@ function formatMinutes(minutes: number) {
                   </span>
                 </p>
               </div>
-          
+
               <span
                 class="rounded-full px-3 py-1 text-xs font-bold"
                 :class="severityClasses(incident.severity)"
@@ -559,7 +619,7 @@ function formatMinutes(minutes: number) {
                 {{ incident.severity }}
               </span>
             </div>
-          
+
             <div
               v-if="incident.excuses?.length"
               class="mt-3 flex flex-wrap gap-2"
@@ -572,7 +632,7 @@ function formatMinutes(minutes: number) {
                 {{ excuseLabels[excuse] || excuse }}
               </span>
             </div>
-          
+
             <p
               v-if="incident.note"
               class="mt-3 text-sm text-slate-300"
@@ -658,10 +718,18 @@ function formatMinutes(minutes: number) {
 .ranking-pill {
   flex-shrink: 0;
   border-radius: 9999px;
-  background: rgb(168 85 247 / 0.2);
   padding: 0.35rem 0.75rem;
   font-size: 0.75rem;
   font-weight: 800;
-  color: rgb(216 180 254);
+}
+
+.blue-pill {
+  background: rgb(59 130 246 / 0.2);
+  color: rgb(147 197 253);
+}
+
+.red-pill {
+  background: rgb(239 68 68 / 0.2);
+  color: rgb(252 165 165);
 }
 </style>
