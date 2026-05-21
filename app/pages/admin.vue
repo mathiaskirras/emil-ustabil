@@ -192,21 +192,32 @@ async function createExcuse() {
 
             <div
               v-if="showExcuseDropdown"
-              class="absolute left-0 right-0 top-full z-30 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-slate-900 p-3 shadow-2xl"
+              class="absolute left-0 right-0 top-full z-30 mt-2 rounded-2xl border border-white/10 bg-slate-900 p-3 shadow-2xl"
             >
-              <label
-                v-for="excuse in sortedExcuses"
-                :key="excuse.value"
-                class="flex items-center gap-3 rounded-xl px-2 py-2 text-sm hover:bg-white/5"
-              >
-                <input
-                  v-model="form.excuses"
-                  type="checkbox"
-                  :value="excuse.value"
-                  class="accent-purple-500"
+              <div class="max-h-64 overflow-y-auto">
+                <label
+                  v-for="excuse in sortedExcuses"
+                  :key="excuse.value"
+                  class="flex items-center gap-3 rounded-xl px-2 py-2 text-sm hover:bg-white/5"
                 >
-                {{ excuse.label }}
-              </label>
+                  <input
+                    v-model="form.excuses"
+                    type="checkbox"
+                    :value="excuse.value"
+                    class="accent-purple-500"
+                  >
+            
+                  {{ excuse.label }}
+                </label>
+              </div>
+            
+              <button
+                type="button"
+                class="mt-3 w-full rounded-xl bg-purple-500 px-4 py-2 text-sm font-bold text-white"
+                @click="showExcuseDropdown = false"
+              >
+                Færdig
+              </button>
             </div>
           </div>
 
