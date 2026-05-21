@@ -25,7 +25,7 @@ function unlock() {
       </h1>
 
       <p class="mt-2 text-sm text-slate-400">
-        Indtast kodeord og navn for at aktivere incident-rapportering.
+        Indtast dit navn og kodeord.
       </p>
 
       <div class="mt-6 space-y-3">
