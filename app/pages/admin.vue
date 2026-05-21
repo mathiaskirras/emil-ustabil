@@ -256,7 +256,7 @@ const canSubmitIncident = computed(() => {
 
       <section class="mt-6 rounded-3xl border border-white/10 bg-white/[0.04] p-5">
         <h2 class="text-xl font-bold">
-          Tilføj type
+          Tilføj aktivitet
         </h2>
 
         <div class="mt-4 flex gap-2">
