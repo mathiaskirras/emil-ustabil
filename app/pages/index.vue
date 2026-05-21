@@ -802,7 +802,7 @@ function formatMinutes(minutes: number) {
       <section class="mt-4 grid gap-4 md:grid-cols-2">
         <article class="panel">
           <h2 class="text-lg font-black">
-            Mest forsinkede typer
+            Mest forsinkede aktiviteter
           </h2>
 
           <p class="text-xs text-slate-500">
@@ -838,7 +838,7 @@ function formatMinutes(minutes: number) {
 
         <article class="panel">
           <h2 class="text-lg font-black">
-            Mest aflyste typer
+            Mest aflyste aktiviteter
           </h2>
 
           <p class="text-xs text-slate-500">
