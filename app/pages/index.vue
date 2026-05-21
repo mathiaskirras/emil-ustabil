@@ -123,6 +123,50 @@ const stats = computed(() => {
   }
 })
 
+function cancellationNoticeColor(value: number) {
+  if (value >= 60) {
+    return 'text-green-300'
+  }
+
+  if (value >= 15) {
+    return 'text-yellow-300'
+  }
+
+  if (value >= 0) {
+    return 'text-orange-300'
+  }
+
+  return 'text-red-300'
+}
+
+function excusesPerIncidentColor(value: number) {
+  if (value <= 1) {
+    return 'text-green-300'
+  }
+
+  if (value <= 2) {
+    return 'text-yellow-300'
+  }
+
+  return 'text-red-300'
+}
+
+function daysSinceIncidentColor(days: number) {
+  if (days >= 14) {
+    return 'text-green-300'
+  }
+
+  if (days >= 7) {
+    return 'text-yellow-300'
+  }
+
+  if (days >= 3) {
+    return 'text-orange-300'
+  }
+
+  return 'text-red-300'
+}
+
 function severityClasses(severity: number) {
   if (severity <= 1) {
     return 'bg-green-500/20 text-green-300'
@@ -531,7 +575,7 @@ function formatMinutes(minutes: number) {
             Gns. aflysningsvarsel
           </p>
 
-          <p class="mini-kpi-value text-orange-300">
+          <p class="mini-kpi-value" :class="cancellationNoticeColor(stats.avgCancellationNotice)">
             {{ formatMinutes(stats.avgCancellationNotice) }}
           </p>
         </article>
@@ -541,7 +585,7 @@ function formatMinutes(minutes: number) {
             Korteste varsel
           </p>
 
-          <p class="mini-kpi-value text-red-300">
+          <p class="mini-kpi-value" :class="cancellationNoticeColor(stats.shortestCancellationNotice)">
             {{ formatMinutes(stats.shortestCancellationNotice) }}
           </p>
         </article>
@@ -551,7 +595,7 @@ function formatMinutes(minutes: number) {
             Undskyldninger pr. hændelse
           </p>
 
-          <p class="mini-kpi-value text-blue-300">
+          <p class="mini-kpi-value" :class="excusesPerIncidentColor(stats.excusesPerIncident)">
             {{ stats.excusesPerIncident }}
           </p>
         </article>
@@ -561,7 +605,7 @@ function formatMinutes(minutes: number) {
             Dage siden sidste hændelse
           </p>
 
-          <p class="mini-kpi-value text-green-300">
+          <p class="mini-kpi-value" :class="daysSinceIncidentColor(stats.daysSinceLastIncident)">
             {{ stats.daysSinceLastIncident }}
           </p>
         </article>
