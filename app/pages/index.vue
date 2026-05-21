@@ -75,6 +75,26 @@ const stats = computed(() => {
   }
 })
 
+function severityClasses(severity: number) {
+  if (severity <= 1) {
+    return 'bg-green-500/20 text-green-300'
+  }
+
+  if (severity === 2) {
+    return 'bg-lime-500/20 text-lime-300'
+  }
+
+  if (severity === 3) {
+    return 'bg-yellow-500/20 text-yellow-300'
+  }
+
+  if (severity === 4) {
+    return 'bg-orange-500/20 text-orange-300'
+  }
+
+  return 'bg-red-500/20 text-red-300'
+}
+
 const topExcuses = computed(() => {
   const counts: Record<string, number> = {}
 
@@ -500,12 +520,12 @@ function formatMinutes(minutes: number) {
                 <h3 class="font-bold">
                   {{ incident.title || 'Uden titel' }}
                 </h3>
-
+          
                 <p class="mt-1 text-xs font-bold uppercase tracking-wide text-purple-300">
                   {{ activityTypeLabels[incident.activityType] || incident.activityType }}
                 </p>
-
-                <p class="mt-1 text-sm text-slate-400">
+          
+                <p class="mt-2 text-sm text-slate-400">
                   {{ new Date(incident.date).toLocaleDateString('da-DK') }}
                   ·
                   {{
@@ -514,13 +534,39 @@ function formatMinutes(minutes: number) {
                       : `aflyst ${formatMinutes(incident.cancelledNoticeMinutes)} før`
                   }}
                 </p>
+          
+                <p
+                  v-if="incident.reportedBy"
+                  class="mt-2 text-xs text-slate-500"
+                >
+                  Oprettet af
+                  <span class="font-bold text-slate-300">
+                    {{ incident.reportedBy }}
+                  </span>
+                </p>
               </div>
-
-              <span class="rounded-full bg-purple-500/20 px-3 py-1 text-xs font-bold text-purple-300">
+          
+              <span
+                class="rounded-full px-3 py-1 text-xs font-bold"
+                :class="severityClasses(incident.severity)"
+              >
                 {{ incident.severity }}
               </span>
             </div>
-
+          
+            <div
+              v-if="incident.excuses?.length"
+              class="mt-3 flex flex-wrap gap-2"
+            >
+              <span
+                v-for="excuse in incident.excuses"
+                :key="excuse"
+                class="rounded-full bg-white/5 px-2 py-1 text-[11px] text-slate-300"
+              >
+                {{ excuseLabels[excuse] || excuse }}
+              </span>
+            </div>
+          
             <p
               v-if="incident.note"
               class="mt-3 text-sm text-slate-300"
