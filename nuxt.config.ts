@@ -10,18 +10,6 @@ export default defineNuxtConfig({
     '@vite-pwa/nuxt'
   ],
 
-  app: {
-    head: {
-      link: [
-        {
-          rel: 'icon',
-          type: 'image/png',
-          href: '/favicon.png'
-        }
-      ]
-    }
-  },
-
   runtimeConfig: {
     mongodbUri: process.env.MONGODB_URI,
     adminPassword: process.env.ADMIN_PASSWORD
