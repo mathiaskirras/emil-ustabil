@@ -582,7 +582,7 @@ function formatMinutes(minutes: number) {
 
         <article class="mini-kpi">
           <p class="mini-kpi-label">
-            Korteste varsel
+            Dårligste varsel
           </p>
 
           <p class="mini-kpi-value" :class="cancellationNoticeColor(stats.shortestCancellationNotice)">
