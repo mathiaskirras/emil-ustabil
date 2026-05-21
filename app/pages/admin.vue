@@ -125,9 +125,9 @@ const canSubmitIncident = computed(() => {
           </label>
 
           <label class="field">
-            <span>Type</span>
+            <span>Aktivitet</span>
             <select v-model="form.activityType" class="input">
-              <option value="">Vælg type</option>
+              <option value="">Vælg aktivitet</option>
               <option
                 v-for="type in sortedActivityTypes"
                 :key="type.value"
