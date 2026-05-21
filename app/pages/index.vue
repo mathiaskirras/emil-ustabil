@@ -253,7 +253,13 @@ function formatMinutes(minutes: number) {
 <template>
   <main class="min-h-screen bg-slate-950 text-white">
     <header class="sticky top-0 z-20 border-b border-white/10 bg-slate-950/90 backdrop-blur">
-      <div class="mx-auto flex max-w-5xl items-center px-4 py-4">
+      <div class="mx-auto flex max-w-5xl items-center gap-3 px-4 py-4">
+        <img
+          src="/favicon.png"
+          alt="Emil Mødeustabil"
+          class="h-9 w-9 rounded-xl shadow-lg shadow-purple-500/20"
+        >
+    
         <h1 class="text-xl font-black tracking-tight text-white">
           Emil Møde<span class="text-purple-400">u</span>stabil
         </h1>
