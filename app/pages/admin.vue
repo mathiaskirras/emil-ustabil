@@ -86,6 +86,20 @@ async function createExcuse() {
   newExcuse.value = ''
   refreshExcuses()
 }
+
+const canSubmitIncident = computed(() => {
+  const hasMinutes = form.status === 'late'
+    ? form.delayMinutes !== null && form.delayMinutes !== ''
+    : form.cancelledNoticeMinutes !== null && form.cancelledNoticeMinutes !== ''
+
+  return Boolean(
+    form.activityType &&
+    form.status &&
+    form.date &&
+    hasMinutes &&
+    form.excuses.length > 0
+  )
+})
 </script>
 
 <template>
@@ -231,7 +245,8 @@ async function createExcuse() {
           </label>
 
           <button
-            class="w-full rounded-xl bg-purple-500 px-4 py-3 font-bold"
+            class="w-full rounded-xl px-4 py-3 font-bold transition disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400 enabled:bg-purple-500"
+            :disabled="!canSubmitIncident"
             @click="createIncident"
           >
             Gem hændelse
