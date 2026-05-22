@@ -2,6 +2,7 @@
 const { data: incidents } = await useFetch('/api/incidents')
 const { data: activityTypes } = await useFetch('/api/activity-types')
 const { data: excuses } = await useFetch('/api/excuses')
+const { data: quotes } = await useFetch('/api/quotes')
 
 const isAdmin = ref(false)
 
@@ -69,10 +70,6 @@ const stats = computed(() => {
     ? Math.min(...cancelled.map((x: any) => Number(x.cancelledNoticeMinutes || 0)))
     : 0
 
-  const cancellationsAfterStart = cancelled.filter((x: any) => {
-    return Number(x.cancelledNoticeMinutes || 0) < 0
-  }).length
-
   const totalExcuses = list.reduce((sum: number, x: any) => {
     return sum + (x.excuses?.length || 0)
   }, 0)
@@ -116,11 +113,37 @@ const stats = computed(() => {
     cancellationRate,
     avgCancellationNotice,
     shortestCancellationNotice,
-    cancellationsAfterStart,
     excusesPerIncident,
     daysSinceLastIncident,
     worstSeverityIncident
   }
+})
+
+const seasonQuote = computed(() => {
+  return (quotes.value || []).find((quote: any) => {
+    return quote.text === 'Sæsonen er lang'
+  })
+})
+
+const seasonProgress = computed(() => {
+  const now = new Date()
+  const year = now.getFullYear()
+
+  const start = new Date(year, 2, 1) // 1. marts
+  const end = new Date(year, 9, 31, 23, 59, 59) // 31. oktober
+
+  if (now < start) {
+    return 0
+  }
+
+  if (now > end) {
+    return 100
+  }
+
+  const total = end.getTime() - start.getTime()
+  const elapsed = now.getTime() - start.getTime()
+
+  return Math.round((elapsed / total) * 100)
 })
 
 function cancellationNoticeColor(value: number) {
@@ -554,17 +577,21 @@ function formatMinutes(minutes: number) {
         <article class="dashboard-card">
           <div
             class="circle"
-            :style="circleStyle(stats.cancellationsAfterStart, Math.max(stats.cancelled, 1), 'rgb(249 115 22)')"
+            :style="circleStyle(seasonProgress, 100, 'rgb(34 197 94)')"
           >
             <div class="circle-inner">
               <p class="text-2xl font-black">
-                {{ stats.cancellationsAfterStart }}
+                {{ seasonProgress }}%
               </p>
             </div>
           </div>
-
+        
           <p class="mt-3 text-center text-sm font-bold">
-            Aflyst efter start
+            “Sæsonen er lang”
+          </p>
+        
+          <p class="mt-1 text-center text-xs text-slate-500">
+            sagt {{ seasonQuote?.count || 0 }} gange
           </p>
         </article>
       </section>
