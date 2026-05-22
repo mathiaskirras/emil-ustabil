@@ -564,7 +564,7 @@ function formatMinutes(minutes: number) {
           </div>
 
           <p class="mt-3 text-center text-sm font-bold">
-            Efter start
+            Aflyst efter start
           </p>
         </article>
       </section>
