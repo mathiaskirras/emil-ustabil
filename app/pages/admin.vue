@@ -14,6 +14,21 @@ const { data: activityTypes, refresh: refreshTypes } =
 const { data: excuses, refresh: refreshExcuses } =
   await useFetch('/api/excuses')
 
+const { data: quotes, refresh: refreshQuotes } =
+  await useFetch('/api/quotes')
+
+async function updateQuoteCount(id: string, change: number) {
+  await $fetch(`/api/quotes/${id}`, {
+    method: 'PATCH',
+    body: {
+      change,
+      adminPassword: adminPassword.value
+    }
+  })
+
+  refreshQuotes()
+}
+
 const sortedActivityTypes = computed(() => {
   return [...(activityTypes.value || [])].sort((a: any, b: any) =>
     a.label.localeCompare(b.label, 'da-DK')
@@ -293,6 +308,54 @@ const canSubmitIncident = computed(() => {
           >
             +
           </button>
+        </div>
+      </section>
+
+      <section class="mt-6 rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+        <h2 class="text-xl font-bold">
+          Citater
+        </h2>
+      
+        <p class="mt-1 text-sm text-slate-400">
+          Tæl hvor ofte klassikerne bliver sagt.
+        </p>
+      
+        <div class="mt-4 space-y-3">
+          <article
+            v-for="quote in quotes"
+            :key="quote._id"
+            class="flex items-center justify-between gap-3 rounded-2xl bg-slate-900/70 p-4"
+          >
+            <div>
+              <p class="font-bold">
+                “{{ quote.text }}”
+              </p>
+      
+              <p class="mt-1 text-sm text-slate-500">
+                {{ quote.count }} gange
+              </p>
+            </div>
+      
+            <div class="flex items-center gap-2">
+              <button
+                class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 text-lg font-bold"
+                @click="updateQuoteCount(quote._id, -1)"
+              >
+                −
+              </button>
+      
+              <span class="w-8 text-center text-lg font-black">
+                {{ quote.count }}
+              </span>
+      
+              <button
+                class="flex h-9 w-9 items-center justify-center rounded-full bg-purple-500 text-lg font-bold"
+                @click="updateQuoteCount(quote._id, 1)"
+              >
+                +
+              </button>
+            </div>
+          </article>
         </div>
       </section>
     </div>
