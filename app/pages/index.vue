@@ -591,7 +591,7 @@ function formatMinutes(minutes: number) {
           </p>
         
           <p class="mt-1 text-center text-xs text-slate-500">
-            sagt {{ seasonQuote?.count || 0 }} gange
+            sagt mindst {{ seasonQuote?.count || 0 }} gange
           </p>
         </article>
       </section>
